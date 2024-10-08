@@ -3,7 +3,7 @@ import Cocoa
 class kingGameState {
     let deck: [Int] = Array(0...52).shuffled()
     var hands: [[Int]] = Array(repeating: Array(repeating: -1, count: 13), count: 4)
-    var (dealer, turn, round) = (0, 0, 0)
+    var (turn, round) = (0, 0)
     
     func whoHas(card:Int) -> Int {
         var who = -1
@@ -32,9 +32,7 @@ class kingGameState {
             }
             hands[i] = hands[i].sorted()
         }
-        
     }
-    
 }
 
 let state = kingGameState()
