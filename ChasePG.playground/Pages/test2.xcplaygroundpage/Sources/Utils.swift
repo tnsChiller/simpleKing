@@ -3,5 +3,7 @@ public enum suit {
 }
 
 public enum gameType {
-    case ElAlmaz, KupaAlmaz, ErkekAlmaz, KizAlmaz, Rifki, SonIki, KozMaca, KozKupa, KozSinek, KozKaro
+    case ElAlmaz, KupaAlmaz, ErkekAlmaz,
+        KizAlmaz, Rifki, SonIki,
+        KozMaca, KozKupa, KozSinek, KozKaro
 }
