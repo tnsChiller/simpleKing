@@ -22,6 +22,17 @@ class kingGameState {
         return who
     }
 
+    func canDitch(card: Int, midMax: Int, hasSuit: Bool) -> Bool {
+        var canDitch: Bool = false
+        if card / 13 == self.suit && card % 13 < midMax{
+            canDitch = true
+        } else if !hasSuit {
+            canDitch = true
+        }
+
+        return canDitch
+    }
+
     init(type: Int, turn: Int, gameNo: Int) {
         if type >= 0 && type <= 10 {
             self.type = type
@@ -47,11 +58,20 @@ class kingGameState {
         let range: ClosedRange<Int> = self.pIdx[anchor]...pIdx[anchor + 1] - 1
         // Pre Action
         var hasSuit: Bool = false
+        var hasKupa: Bool = false
+        var onlyKupa: Bool = true
         var midMax: Int = -1
         if self.turn != 0 {
             for idx: ClosedRange<Int>.Element in range {
-                if self.deck[idx] / 13 == self.suit && !self.played[idx] {
-                    hasSuit = true
+                if !self.played[idx] {
+                    if self.deck[idx] / 13 == self.suit {
+                        hasSuit = true
+                    }
+                    if self.deck[idx] / 13 == 1 {
+                        hasKupa = true
+                    } else {
+                        onlyKupa = false
+                    }
                 }
             }
 
@@ -78,39 +98,21 @@ class kingGameState {
                     }
                 }
             }
-        } else if self.type == 2 {  // Kupa Almaz
-            var hasKupa: Bool = false
-            var onlyKupa: Bool = true
+        } else if self.type == 2 || self.type == 5 {  // Kupa Almaz & Rifki
             for idx: ClosedRange<Int>.Element in range {
                 if !self.played[idx] {
-                    if self.deck[idx] / 13 == 1 {
-                        hasKupa = true
+                    if self.turn == 0 {
+
+                    } else if hasSuit {
+
                     } else {
-                        onlyKupa = false
+
                     }
                 }
             }
 
-            for idx: ClosedRange<Int>.Element in range {
-                if !self.played[idx] {
-                    if self.turn == 0 || !hasSuit {
-                        if self.kupaDustu || onlyKupa {
-                            self.playable[idx] = true
-                        } else {
-                            if self.deck[idx] / 13 != 1 {
-                                self.playable[idx] = true
-                            }
-                        }
-                    } else {
-                        if self.deck[idx] / 13 == self.suit {
-                            self.playable[idx] = true
-                        }
-                    }
-                }
-            }
-
-        } else if self.type == 3 || self.type == 4{  // Erkek Almaz Kiz Almaz
-            let ditchableRange: [Int] = self.type == 3 ? self.erkekIdx: self.kizIdx
+        } else if self.type == 3 || self.type == 4 {  // Erkek Almaz Kiz Almaz
+            let ditchableRange: [Int] = self.type == 3 ? self.erkekIdx : self.kizIdx
             var hasDitchable: Bool = false
             var ditchableIdx: Int = -1
             var ditchable: Int = -1
@@ -163,8 +165,6 @@ class kingGameState {
                     }
                 }
             }
-
-        } else if self.type == 5 {
 
         } else if self.type == 6 || self.type == 7 || self.type == 8 || self.type == 9 {
             var koz: Int = self.type - 6

@@ -1,4 +1,4 @@
-import Cocoa
+import Foundation
 
 class kingGameState {
     let deck: [Int] = Array(0...51).shuffled()
@@ -6,20 +6,11 @@ class kingGameState {
     var playable: [Bool] = Array(repeating: false, count: 52)
     var middle: [Bool] = Array(repeating: false, count: 52)
     var banks: [Int] = Array(repeating: -1, count: 52)
+    var scores: [Double] = [0, 0, 0, 0]
     let pIdx: [Int] = [0, 13, 26, 39, 52]
-    let erkekIdx: [Int] = [10, 12, 23, 25, 36, 38, 49, 51]
     var (turn, round, gameNo): (Int, Int, Int) = (0, 0, 0)
     var (suit, type, start): (Int, Int, Int) = (-1, -1, -1)
     var kupaDustu: Bool = false
-
-    func whoHas(card: Int) -> Int {
-        var who: Int = -1
-        for idx in 0...51 {
-            if card == self.deck[idx] { who = idx / 13 }
-        }
-
-        return who
-    }
 
     init(type: Int, turn: Int, gameNo: Int) {
         if type >= 0 && type <= 10 {
@@ -41,116 +32,231 @@ class kingGameState {
         self.start = whoHas(card: 39)
     }
 
-    func step() {
-        let anchor: Int = (start + turn) % 4
-        let range: ClosedRange<Int> = self.pIdx[anchor]...pIdx[anchor + 1] - 1
+    func whoHas(card: Int) -> Int {
+        var who: Int = -1
+        for idx in 0...51 {
+            if card == self.deck[idx] { who = idx / 13 }
+        }
 
+        return who
+    }
+
+    func canDitch(card: Int, midMax: Int, hasSuit: Bool) -> Bool {
+        var canDitch: Bool = false
+        if card / 13 == self.suit && card % 13 < midMax {
+            canDitch = true
+        } else if !hasSuit && self.turn != 0 {
+            canDitch = true
+        }
+
+        return canDitch
+    }
+
+    func doGame() {
+        for _ in 0...12 {
+            doRound()
+            if self.type == 5 && self.banks[24] != -1 {
+                break
+            }
+        }
+
+        for idx: ClosedRange<Int>.Element in 0...51 {
+            if self.type == 0 {
+                self.scores[self.banks[idx]] = self.scores[self.banks[idx]] - 12.5
+            } else if self.type == 1 {
+
+            } else if self.type == 2 {
+
+            } else if self.type == 3 {
+
+            } else if self.type == 4 {
+
+            } else if self.type == 5 {
+
+            } else {
+
+            }
+        }
+    }
+
+    func doRound() {
+        for _ in 0...3 {
+            step()
+        }
+
+        let winSuit: Int =
+            switch self.type {
+            case 6:
+                0
+            case 7:
+                1
+            case 8:
+                2
+            case 9:
+                3
+            default:
+                self.suit
+            }
+
+        var winIdx: Int = -1
+        var winNo: Int = -1
+        var trumpWin: Bool = false
+        for idx: ClosedRange<Int>.Element in 0...51 {
+            if self.middle[idx] {
+                if self.deck[idx] / 13 == winSuit {
+                    if !trumpWin {
+                        trumpWin = true
+                        winNo = self.deck[idx] % 13
+                        winIdx = idx
+                    } else if self.deck[idx] % 13 > winNo {
+                        winNo = self.deck[idx] % 13
+                        winIdx = idx
+                    }
+                } else if self.deck[idx] / 13 == self.suit
+                    && !trumpWin
+                    && self.deck[idx] % 13 > winNo
+                {
+                    winNo = self.deck[idx] % 13
+                    winIdx = idx
+                }
+            }
+        }
+
+        for idx: ClosedRange<Int>.Element in 0...51 {
+            if self.middle[idx] {
+                self.banks[idx] = winIdx / 13
+                self.middle[idx] = false
+            }
+        }
+    }
+
+    func step() {
+        let anchor: Int = (self.start + turn) % 4
+        let range: ClosedRange<Int> = self.pIdx[anchor]...pIdx[anchor + 1] - 1
+        // Pre Action
         var hasSuit: Bool = false
+        var midMax: Int = -1
         if self.turn != 0 {
             for idx: ClosedRange<Int>.Element in range {
-                if self.deck[idx] / 13 == self.suit && !self.played[idx] {
-                    hasSuit = true
+                if !self.played[idx] {
+                    if self.deck[idx] / 13 == self.suit {
+                        hasSuit = true
+                    }
                 }
             }
-        }
 
-        var hasKupa = false
-        var onlyKupa: Bool = true
-        var maxKupa: Int = 0
-        if self.type == 1 {
-            for idx: ClosedRange<Int>.Element in range {
-                if !self.played[idx] {
-                    if self.deck[idx] / 13 == 1 {
-                        hasKupa = true
-                        if self.deck[idx] % 13 > maxKupa {
-                            maxKupa = self.deck[idx] % 13
-                        }
-                    } else {
-                        onlyKupa = false
+            for idx: ClosedRange<Int>.Element in 0...51 {
+                if self.middle[idx] {
+                    if self.deck[idx] % 13 > midMax
+                        && self.deck[idx] / 13 == self.suit
+                    {
+                        midMax = self.deck[idx] % 13
                     }
                 }
             }
         }
 
-        var hasErkek: Bool = false
-        if self.type == 2 {
-            for idx: ClosedRange<Int>.Element in range {
-                for idxx: Int in erkekIdx {
-                    if idx == idxx {
-                        hasErkek = true
-                        }
-                    }
-                }
+        let ditchables: [Int] =
+            switch self.type {
+            case 2:
+                Array(13...25)
+            case 3:
+                [9, 11, 22, 24, 35, 37, 48, 50]
+            case 4:
+                [10, 23, 36, 49]
+            case 5:
+                [9, 11, 22, 24, 35, 37, 48, 50]
+            case 6:
+                Array(0...12)
+            case 7:
+                Array(13...25)
+            case 8:
+                Array(26...38)
+            case 9:
+                Array(39...51)
+            default:
+                []
             }
 
-        var midMax: Int = -1
-        for idx: Int in 0...51 {
-            if self.middle[idx] {
-                if self.deck[idx] % 13 > midMax {
-                    midMax = self.deck[idx]
-                }
-            }
-        }
-
-        if self.turn == 0 {
-            for idx: ClosedRange<Int>.Element in range {
-                if !self.played[idx] {
-                    if self.type == 1 && hasKupa {
-                        if onlyKupa {
-                            if self.deck[idx] % 13 == maxKupa {
-                                self.playable[idx] = true
+        var rifDitch: Bool = false
+        var ditchableKs: [Int] = []
+        var ditchableQs: [Int] = []
+        var ditchableJs: [Int] = []
+        var ditchableCups: [Int] = []
+        var trumps: [Int] = []
+        for idx: ClosedRange<Int>.Element in range {
+            if !self.played[idx] {
+                if ditchables.contains(idx) {
+                    if canDitch(card: idx, midMax: midMax, hasSuit: hasSuit) {
+                        if self.type == 5 && idx == 24 {
+                            rifDitch = true
+                        } else if self.type == 3 {
+                            if idx % 13 == 11 {
+                                ditchableKs.append(idx)
+                            } else {
+                                ditchableJs.append(idx)
                             }
-                        } else if kupaDustu {
+                        } else if self.type == 4 {
+                            ditchableQs.append(idx)
+                        } else if self.type == 2 {
+                            ditchableCups.append(idx)
+                        } else {
+                            trumps.append(idx)
+                        }
+                    }
+                }
+            }
+        }
+
+        for idx: ClosedRange<Int>.Element in range {
+            if !self.played[idx] {
+                if rifDitch {
+                    if self.deck[idx] == 24 {
+                        self.playable[idx] = true
+                    }
+                } else if !ditchableKs.isEmpty {
+                    if ditchableKs.contains(idx) {
+                        self.playable[idx] = true
+                    }
+                } else if !ditchableJs.isEmpty {
+                    if ditchableJs.contains(idx) {
+                        self.playable[idx] = true
+                    }
+                } else if !ditchableQs.isEmpty {
+                    if ditchableQs.contains(idx) {
+                        self.playable[idx] = true
+                    }
+                } else if !ditchableCups.isEmpty {
+                    if ditchableCups.contains(idx) {
+                        self.playable[idx] = true
+                    }
+                } else if !trumps.isEmpty {
+                    if trumps.contains(idx) {
+                        self.playable[idx] = true
+                    }
+                } else if self.turn == 0 {
+                    if self.type == 2 || self.type == 5 {
+                        if self.kupaDustu {
                             self.playable[idx] = true
-                        } else {
-                            if self.deck[idx] / 13 != 1 {
-                                self.playable[idx] = true
-                            }
+                        } else if self.deck[idx] / 13 != 1 {
+                            self.playable[idx] = true
                         }
                     } else {
                         self.playable[idx] = true
                     }
-                }
-            }
-        } else if hasSuit {
-            for idx: ClosedRange<Int>.Element in range {
-                if !self.played[idx] {
-                    if self.type == 2 {
-
-                    } else if self.deck[idx] / 13 == self.suit {
+                } else if hasSuit {
+                    if self.deck[idx] / 13 == self.suit {
                         self.playable[idx] = true
                     }
+                } else {
+                    self.playable[idx] = true
                 }
-            }
-        } else if self.type == 1 {  // Kupa Almaz
-            for idx: ClosedRange<Int>.Element in range {
-                if !self.played[idx] {
-                    if hasKupa {
-                        if onlyKupa {
-                            if self.deck[idx] % 13 == maxKupa {
-                                self.playable[idx] = true
-                            }
-                        } else {
-                            if self.deck[idx] / 13 == 1 {
-                                self.playable[idx] = true
-                            }
-                        }
-                    } else {
-                        self.playable[idx] = true
-                    }
-                }
-            }
-        } else {
-            for idx: ClosedRange<Int>.Element in range {
-                if !self.played[idx] { self.playable[idx] = true }
             }
         }
 
         var playableIndices: [Int] = []
         for idx: ClosedRange<Int>.Element in range {
-            if self.playable[idx] {
-                playableIndices.append(idx)
-            }
+            if self.playable[idx] { playableIndices.append(idx) }
         }
 
         /* MOVE FROM PLAYER */
@@ -166,3 +272,6 @@ class kingGameState {
         self.turn = (self.turn + 1) % 4
     }
 }
+var a: [Int] = [5]
+a[0] = a[0] + 5
+print(a)
