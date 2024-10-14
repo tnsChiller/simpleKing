@@ -1,13 +1,13 @@
 //
-//  KingUITests.swift
-//  KingUITests
+//  simpleKingUITests.swift
+//  simpleKingUITests
 //
-//  Created by Ilhan on 05/10/2024.
+//  Created by Ilhan on 13/10/2024.
 //
 
 import XCTest
 
-final class KingUITests: XCTestCase {
+final class simpleKingUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

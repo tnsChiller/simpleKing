@@ -1,6 +1,6 @@
 import Foundation
 
-class kingGameState {
+class kingState {
     let deck: [Int] = Array(0...51).shuffled()
     var played: [Bool] = Array(repeating: false, count: 52)
     var playable: [Bool] = Array(repeating: false, count: 52)
@@ -281,6 +281,3 @@ class kingGameState {
         self.turn = (self.turn + 1) % 4
     }
 }
-var a: [Int] = [5]
-a[0] = a[0] + 5
-print(a)

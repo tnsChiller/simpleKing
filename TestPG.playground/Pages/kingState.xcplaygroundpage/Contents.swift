@@ -5,13 +5,20 @@ class kingGameState {
     var played: [Bool] = Array(repeating: false, count: 52)
     var playable: [Bool] = Array(repeating: false, count: 52)
     var middle: [Bool] = Array(repeating: false, count: 52)
+    var lastTwo: [Bool] = Array(repeating: false, count: 52)
     var banks: [Int] = Array(repeating: -1, count: 52)
-    var scores: [Int] = [0, 0, 0, 0]
+    var scores: [Double] = [0, 0, 0, 0]
     let pIdx: [Int] = [0, 13, 26, 39, 52]
+    let macalar: [Int] = Array(0...12)
+    let kupalar: [Int] = Array(13...25)
+    let sinekler: [Int] = Array(26...38)
+    let karolar: [Int] = Array(39...51)
+    let erkekler: [Int] = [9, 11, 22, 24, 35, 37, 48, 50]
+    let kizlar: [Int] = [10, 23, 36, 49]
     var (turn, round, gameNo): (Int, Int, Int) = (0, 0, 0)
     var (suit, type, start): (Int, Int, Int) = (-1, -1, -1)
     var kupaDustu: Bool = false
-    
+
     init(type: Int, turn: Int, gameNo: Int) {
         if type >= 0 && type <= 10 {
             self.type = type
@@ -34,7 +41,7 @@ class kingGameState {
 
     func whoHas(card: Int) -> Int {
         var who: Int = -1
-        for idx in 0...51 {
+        for idx: Int in 0...51 {
             if card == self.deck[idx] { who = idx / 13 }
         }
 
@@ -51,25 +58,94 @@ class kingGameState {
 
         return canDitch
     }
-    
-    func doRound() {
-        for idx: ClosedRange<Int>.Element in 0...3 {
-            step()
-        }
-        
-        var winIdx: Int = -1
-        var winNo: Int = -1
-        for idx: ClosedRange<Int>.Element in 0...51 {
-            if self.middle[idx] {
-                if self.deck[idx] % 13 > winNo && self.deck[idx] / 13 == self.suit {
-                    winIdx = idx
-                    winNo = self.deck[idx] % 13
+
+    func doGame() {
+        for _ in 0...12 {
+            doRound()
+            self.round += 1
+            if self.type == 5 {
+                for idx: ClosedRange<Int>.Element in 0...51 {
+                    if self.deck[idx] == 24 && self.banks[idx] != -1 {
+                        break
+                    }
                 }
             }
         }
-        
-        let winner: Int = winNo / 13
-        var middle: [Bool] = Array(repeating: false, count: 52)
+
+        for idx: ClosedRange<Int>.Element in 0...51 {
+            if self.type == 0 {
+                self.scores[self.banks[idx]] -= 12.5
+            } else if self.type == 1 {
+                if self.lastTwo[idx] {
+                    self.scores[self.banks[idx]] -= 45
+                }
+            } else if self.type == 2 {
+                if self.deck[idx] / 13 == 1 {
+                    self.scores[self.banks[idx]] -= 30
+                }
+            } else if self.type == 3 {
+                if self.erkekler.contains(self.deck[idx]) {
+                    self.scores[self.banks[idx]] -= 60
+                }
+            } else if self.type == 4 {
+                if self.kizlar.contains(self.deck[idx]) {
+                    self.scores[self.banks[idx]] -= 100
+                }
+            } else if self.type == 5 {
+                if self.deck[idx] == 24 {
+                    self.scores[self.banks[idx]] -= 320
+                }
+            } else if self.deck[idx] / 13 == self.suit - 6 {
+                self.scores[self.banks[idx]] += 50
+            }
+        }
+    }
+
+    func doRound() {
+        for _ in 0...3 { step() }
+
+        let winSuit: Int =
+            switch self.type {
+            case 6: 0
+            case 7: 1
+            case 8: 2
+            case 9: 3
+            default: self.suit
+            }
+
+        var winIdx: Int = -1
+        var winNo: Int = -1
+        var trumpWin: Bool = false
+        for idx: ClosedRange<Int>.Element in 0...51 {
+            if self.middle[idx] {
+                if self.deck[idx] / 13 == winSuit {
+                    if !trumpWin {
+                        trumpWin = true
+                        winNo = self.deck[idx] % 13
+                        winIdx = idx
+                    } else if self.deck[idx] % 13 > winNo {
+                        winNo = self.deck[idx] % 13
+                        winIdx = idx
+                    }
+                } else if self.deck[idx] / 13 == self.suit
+                    && !trumpWin
+                    && self.deck[idx] % 13 > winNo
+                {
+                    winNo = self.deck[idx] % 13
+                    winIdx = idx
+                }
+            }
+        }
+
+        for idx: ClosedRange<Int>.Element in 0...51 {
+            if self.middle[idx] {
+                self.banks[idx] = winIdx / 13
+                self.middle[idx] = false
+                if self.type == 1 && self.round >= 11 {
+                    self.lastTwo[idx] = true
+                }
+            }
+        }
     }
 
     func step() {
@@ -100,24 +176,15 @@ class kingGameState {
 
         let ditchables: [Int] =
             switch self.type {
-            case 2:
-                Array(13...25)
-            case 3:
-                [9, 11, 22, 24, 35, 37, 48, 50]
-            case 4:
-                [10, 23, 36, 49]
-            case 5:
-                [9, 11, 22, 24, 35, 37, 48, 50]
-            case 6:
-                Array(0...12)
-            case 7:
-                Array(13...25)
-            case 8:
-                Array(26...38)
-            case 9:
-                Array(39...51)
-            default:
-                []
+            case 2: self.kupalar
+            case 3: self.erkekler
+            case 4: self.kizlar
+            case 5: self.kupalar
+            case 6: self.macalar
+            case 7: self.kupalar
+            case 8: self.sinekler
+            case 9: self.karolar
+            default: []
             }
 
         var rifDitch: Bool = false
@@ -130,10 +197,10 @@ class kingGameState {
             if !self.played[idx] {
                 if ditchables.contains(idx) {
                     if canDitch(card: idx, midMax: midMax, hasSuit: hasSuit) {
-                        if self.type == 5 && idx == 24 {
+                        if self.type == 5 && self.deck[idx] == 24 {
                             rifDitch = true
                         } else if self.type == 3 {
-                            if idx % 13 == 11 {
+                            if self.deck[idx] % 13 == 11 {
                                 ditchableKs.append(idx)
                             } else {
                                 ditchableJs.append(idx)
@@ -198,9 +265,7 @@ class kingGameState {
 
         var playableIndices: [Int] = []
         for idx: ClosedRange<Int>.Element in range {
-            if self.playable[idx] {
-                playableIndices.append(idx)
-            }
+            if self.playable[idx] { playableIndices.append(idx) }
         }
 
         /* MOVE FROM PLAYER */
@@ -218,5 +283,4 @@ class kingGameState {
 }
 var a: [Int] = [5]
 a[0] = a[0] + 5
-a[0] += 10
 print(a)

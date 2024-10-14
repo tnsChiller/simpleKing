@@ -1,13 +1,13 @@
 //
-//  KingUITestsLaunchTests.swift
-//  KingUITests
+//  simpleKingUITestsLaunchTests.swift
+//  simpleKingUITests
 //
-//  Created by Ilhan on 05/10/2024.
+//  Created by Ilhan on 13/10/2024.
 //
 
 import XCTest
 
-final class KingUITestsLaunchTests: XCTestCase {
+final class simpleKingUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true
